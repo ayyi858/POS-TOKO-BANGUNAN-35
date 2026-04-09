@@ -44,6 +44,7 @@ CREATE TABLE public.transactions (
   user_id UUID REFERENCES public.users(id) NOT NULL,
   shift_id UUID REFERENCES public.shifts(id) NOT NULL,
   total DECIMAL(10,2) NOT NULL,
+  payment_method TEXT DEFAULT 'CASH',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
