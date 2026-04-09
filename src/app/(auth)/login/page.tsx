@@ -16,9 +16,8 @@ export default function LoginPage() {
           <p className="text-sm text-zinc-500 mt-1">Masuk ke sistem POS &amp; Inventori</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-8">
-          <form action={login} className="space-y-5">
+          <form action={async (formData) => { 'use server'; await login(formData); }} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">
                 Email

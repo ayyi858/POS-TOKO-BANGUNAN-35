@@ -61,7 +61,7 @@ export default async function SetoranPage() {
                       Belum Disetor
                     </span>
                   </div>
-                  <form action={submitDeposit.bind(null, d.shift_id)}>
+                  <form action={async () => { 'use server'; await submitDeposit(d.shift_id); }}>
                     <Button
                       type="submit"
                       className="rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold h-9 px-4 shrink-0"
