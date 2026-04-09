@@ -6,39 +6,52 @@ import { sendFonntMessage, getSettings } from './settings'
 
 export async function getProcurementSchedules() {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('procurement_schedules')
     .select(`*, products (name), suppliers (name)`)
     .order('scheduled_date', { ascending: true })
-    
+
   if (error) {
     console.error("Error fetching schedules:", error)
     return []
   }
+
+  // Auto-complete schedules that have passed
+  const now = new Date()
+  for (const schedule of data) {
+    if (schedule.status !== 'DONE') {
+      const scheduleDateTime = new Date(`${schedule.scheduled_date.slice(0,10)}T${schedule.reminder_time || '00:00'}:00+08:00`)
+      if (scheduleDateTime < now) {
+        await supabase.from('procurement_schedules').update({ status: 'DONE' }).eq('id', schedule.id)
+        schedule.status = 'DONE'
+      }
+    }
+  }
+
   return data
 }
 
 export async function createSchedule(data: {
-   product_id: string
-   supplier_id: string
-   scheduled_date: string
-   reminder_time?: string   // e.g. "08:00"
-   qty: number
-   notes?: string
+  product_id: string
+  supplier_id: string
+  scheduled_date: string
+  reminder_time?: string   // e.g. "08:00"
+  qty: number
+  notes?: string
 }) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('procurement_schedules')
     .insert({
-       product_id: data.product_id,
-       supplier_id: data.supplier_id,
-       scheduled_date: data.scheduled_date,
-       reminder_time: data.reminder_time || '08:00',
-       qty: data.qty,
-       notes: data.notes || '',
-       status: 'UPCOMING'
+      product_id: data.product_id,
+      supplier_id: data.supplier_id,
+      scheduled_date: data.scheduled_date,
+      reminder_time: data.reminder_time || '08:00',
+      qty: data.qty,
+      notes: data.notes || '',
+      status: 'UPCOMING'
     })
 
   if (error) throw new Error(error.message)
@@ -47,73 +60,73 @@ export async function createSchedule(data: {
 }
 
 export async function updateScheduleStatus(id: string, status: 'UPCOMING' | 'DONE' | 'OVERDUE') {
-   const supabase = await createClient()
-  
-   const { error } = await supabase
-     .from('procurement_schedules')
-     .update({ status })
-     .eq('id', id)
- 
-   if (error) throw new Error(error.message)
-   revalidatePath('/owner/procurement')
-   return true
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('procurement_schedules')
+    .update({ status })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/owner/procurement')
+  return true
 }
 
 export async function deleteSchedule(id: string) {
-    const supabase = await createClient()
-   
-    const { error } = await supabase
-      .from('procurement_schedules')
-      .delete()
-      .eq('id', id)
-  
-    if (error) throw new Error(error.message)
-    revalidatePath('/owner/procurement')
-    return true
- }
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('procurement_schedules')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/owner/procurement')
+  return true
+}
 
 export async function updateSchedule(id: string, data: {
-   product_id?: string
-   supplier_id?: string
-   scheduled_date?: string
-   reminder_time?: string
-   qty?: number
-   notes?: string
+  product_id?: string
+  supplier_id?: string
+  scheduled_date?: string
+  reminder_time?: string
+  qty?: number
+  notes?: string
 }) {
-   const supabase = await createClient()
-  
-   const { error } = await supabase
-     .from('procurement_schedules')
-     .update(data)
-     .eq('id', id)
- 
-   if (error) throw new Error(error.message)
-   revalidatePath('/owner/procurement')
-   return true
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('procurement_schedules')
+    .update(data)
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/owner/procurement')
+  return true
 }
 
 
 export async function sendScheduleReminder(scheduleId: string) {
-   const supabase = await createClient()
+  const supabase = await createClient()
 
-   const { data: schedule } = await supabase
-     .from('procurement_schedules')
-     .select(`*, products (name), suppliers (name)`)
-     .eq('id', scheduleId)
-     .single()
-     
-   if (!schedule) throw new Error('Data jadwal tidak ditemukan.')
+  const { data: schedule } = await supabase
+    .from('procurement_schedules')
+    .select(`*, products (name), suppliers (name)`)
+    .eq('id', scheduleId)
+    .single()
 
-   const settings = await getSettings()
-   const waNumber = settings['wa_reminder_number']
+  if (!schedule) throw new Error('Data jadwal tidak ditemukan.')
 
-   if (!waNumber) {
-      throw new Error('Nomor WA pengingat belum dikonfigurasi di menu Pengaturan.')
-   }
+  const settings = await getSettings()
+  const waNumber = settings['wa_reminder_number']
 
-   const msg = buildReminderMessage(schedule)
-   await sendFonntMessage(waNumber, msg)
-   return true
+  if (!waNumber) {
+    throw new Error('Nomor WA pengingat belum dikonfigurasi di menu Pengaturan.')
+  }
+
+  const msg = buildReminderMessage(schedule)
+  await sendFonntMessage(waNumber, msg)
+  return true
 }
 
 /** 
@@ -126,8 +139,19 @@ export async function checkAndSendAutoReminders() {
   const waNumber = settings['wa_reminder_number']
   if (!waNumber) return { sent: 0, reason: 'No WA number configured' }
 
-  const todayStr = new Date().toISOString().slice(0, 10)
-  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes()
+  // Pastikan waktu yang digunakan selalu WITA (Asia/Makassar)
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Makassar',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(new Date());
+  const nowHour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+  const nowMin = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+
+  const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Makassar' }).format(new Date());
+  const nowMinutes = nowHour * 60 + nowMin;
 
   const { data: schedules } = await supabase
     .from('procurement_schedules')
@@ -159,11 +183,11 @@ export async function checkAndSendAutoReminders() {
 
 function buildReminderMessage(schedule: any) {
   return `🔔 *REMINDER PENGADAAN BARANG* 🔔\n\n` +
-         `Jadwal: ${new Date(schedule.scheduled_date).toLocaleDateString('id-ID')}\n` +
-         (schedule.reminder_time ? `Waktu: ${schedule.reminder_time} WIB\n` : '') +
-         `Supplier: ${schedule.suppliers?.name || '-'}\n` +
-         `Produk: ${schedule.products?.name || '-'}\n` +
-         `Jumlah: ${schedule.qty} Pcs\n` +
-         (schedule.notes ? `Catatan: ${schedule.notes}\n` : '') +
-         `\n_Sistem POS & Inventori_`
+    `Jadwal: ${new Date(schedule.scheduled_date).toLocaleDateString('id-ID')}\n` +
+    (schedule.reminder_time ? `Waktu: ${schedule.reminder_time} WITA\n` : '') +
+    `Supplier: ${schedule.suppliers?.name || '-'}\n` +
+    `Produk: ${schedule.products?.name || '-'}\n` +
+    `Jumlah: ${schedule.qty} Pcs\n` +
+    (schedule.notes ? `Catatan: ${schedule.notes}\n` : '') +
+    `\n_Sistem POS & Inventori_`
 }

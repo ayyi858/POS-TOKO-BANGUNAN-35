@@ -11,7 +11,7 @@ export async function getActiveShift(userId: string) {
 
 export async function getLatestShift(userId: string) {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('shifts').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
+    const { data, error } = await supabase.from('shifts').select('*, transactions(*)').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
     return data || null
 }
 

@@ -112,11 +112,11 @@ export function ProductsClient({ initialProducts }: { initialProducts: any[] }) 
   // Download Excel template
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ['Nama Produk', 'Harga Jual', 'Stok Awal', 'Stok Minimum'],
-      ['Contoh Produk A', 15000, 50, 10],
-      ['Contoh Produk B', 25000, 30, 5],
+      ['Nama Produk', 'Kategori', 'Harga Jual', 'Stok Awal', 'Stok Minimum'],
+      ['Contoh Produk A', 'Bahan Bangunan', 15000, 50, 10],
+      ['Contoh Produk B', 'Perkakas', 25000, 30, 5],
     ])
-    ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 15 }]
+    ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Template Produk')
     XLSX.writeFile(wb, 'template_import_produk.xlsx')
@@ -136,9 +136,10 @@ export function ProductsClient({ initialProducts }: { initialProducts: any[] }) 
       // Skip header row
       const records = rows.slice(1).filter(r => r[0]).map(r => ({
         name: String(r[0] || '').trim(),
-        price: Number(r[1]) || 0,
-        stock: Number(r[2]) || 0,
-        min_stock: Number(r[3]) || 5,
+        category: r[1] ? String(r[1]).trim() : undefined,
+        price: Number(r[2]) || 0,
+        stock: Number(r[3]) || 0,
+        min_stock: Number(r[4]) || 5,
       }))
 
       if (records.length === 0) return toast.error('Tidak ada data produk di file Excel.')
@@ -189,6 +190,7 @@ export function ProductsClient({ initialProducts }: { initialProducts: any[] }) 
 
       {/* Table */}
       <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-50 hover:bg-transparent">
@@ -257,6 +259,7 @@ export function ProductsClient({ initialProducts }: { initialProducts: any[] }) 
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Modal Tambah/Edit Produk */}

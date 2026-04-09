@@ -53,6 +53,7 @@ export async function reduceStock(productId: string, qty: number, reason: string
 
 export async function importProducts(records: Array<{
   name: string
+  category?: string
   price: number
   stock: number
   min_stock: number
@@ -63,6 +64,7 @@ export async function importProducts(records: Array<{
   const { error } = await supabase.from('products').insert(
     records.map(r => ({
       name: r.name,
+      category: r.category,
       price: r.price,
       stock: r.stock,
       min_stock: r.min_stock,

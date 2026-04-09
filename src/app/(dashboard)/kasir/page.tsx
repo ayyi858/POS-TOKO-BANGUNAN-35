@@ -113,61 +113,6 @@ export default async function KasirDashboard() {
         </div>
       </div>
 
-      {/* Transaction History — tanpa total (pendapatan hanya terlihat saat tutup shift) */}
-      {activeShift && (
-        <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-900">Riwayat Transaksi Shift Ini</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">Total pendapatan & ringkasan tersedia saat tutup shift.</p>
-            </div>
-            <Link
-              href="/kasir/transaction"
-              className="flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 px-3 py-1.5 rounded-lg transition-colors border border-zinc-100"
-            >
-              POS <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {transactions && transactions.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-zinc-50 hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold text-zinc-400 pl-6">Waktu</TableHead>
-                  <TableHead className="text-xs font-semibold text-zinc-400">Item Terjual</TableHead>
-                  <TableHead className="text-xs font-semibold text-zinc-400 text-right pr-6">Jml Barang</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map(trx => {
-                  const items = (trx.items as any[]) || []
-                  const totalQty = items.reduce((sum: number, item: any) => sum + item.qty, 0)
-                  const names = items.slice(0, 2).map((i: any) => i.products?.name).filter(Boolean).join(', ')
-                  return (
-                    <TableRow key={trx.id} className="border-zinc-50 hover:bg-zinc-50/50 transition-colors">
-                      <TableCell className="pl-6 font-medium text-sm text-zinc-700">
-                        {new Date(trx.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                      </TableCell>
-                      <TableCell className="text-xs text-zinc-500 max-w-[200px] truncate">
-                        {names || '—'}{items.length > 2 ? ` +${items.length - 2} lainnya` : ''}
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <span className="text-xs font-bold bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-md">{totalQty} pcs</span>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-16 text-center">
-              <PackageX className="w-8 h-8 text-zinc-200 mx-auto mb-2" />
-              <p className="text-sm font-medium text-zinc-500">Belum ada transaksi</p>
-              <p className="text-xs text-zinc-400 mt-0.5">Semua transaksi shift ini akan tersimpan di sini.</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

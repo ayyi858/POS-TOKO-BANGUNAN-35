@@ -24,7 +24,8 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [paidAmount, setPaidAmount] = useState<string>('')
-  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number; paid: number; change: number; date: string } | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER' | 'QRIS'>('CASH')
+  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number; paid: number; change: number; date: string; method: string } | null>(null)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const paidInputRef = useRef<HTMLInputElement>(null)
@@ -109,7 +110,7 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
     setLoading(true)
     try {
       const items = cart.map(c => ({ productId: c.id, qty: c.qty, price: c.price }))
-      await createTransaction(userId, shiftId, items)
+      await createTransaction(userId, shiftId, items, paymentMethod)
       toast.success('Transaksi berhasil!')
 
       // Optimistic update of local stock amounts
@@ -129,6 +130,7 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
         paid: paid,
         change: change,
         date: new Date().toLocaleString('id-ID'),
+        method: paymentMethod
       })
       setCart([])
       setPaidAmount('')
@@ -267,6 +269,22 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
             <span className="text-2xl font-black text-zinc-900 tracking-tight">Rp {total.toLocaleString('id-ID')}</span>
           </div>
 
+          <div className="grid grid-cols-3 gap-2">
+            {(['CASH', 'TRANSFER', 'QRIS'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setPaymentMethod(m)}
+                className={`py-2 px-1 text-xs font-bold rounded-lg border transition-colors ${
+                  paymentMethod === m
+                    ? 'bg-zinc-900 text-white border-zinc-900'
+                    : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300'
+                }`}
+              >
+                {m === 'CASH' ? 'Tunai' : m === 'TRANSFER' ? 'Transfer' : 'QRIS'}
+              </button>
+            ))}
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <label htmlFor="paidAmount" className="text-xs font-bold text-zinc-500 w-24 shrink-0 uppercase tracking-widest">Uang Bayar</label>
@@ -325,7 +343,7 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
 
               <div className="flex justify-between items-center border-b border-dashed border-zinc-300 pb-2 mb-4 text-[10px] text-zinc-500">
                 <span>{receipt.date}</span>
-                <span>Tunai</span>
+                <span className="font-bold">{receipt.method === 'CASH' ? 'TUNAI' : receipt.method === 'TRANSFER' ? 'TRANSFER' : 'QRIS'}</span>
               </div>
 
               <table className="w-full mb-4">
@@ -352,7 +370,7 @@ export function PosCart({ products, userId, shiftId }: { products: Product[]; us
                   <span>Rp {receipt.total.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-zinc-600 pt-1">
-                  <span>TUNAI:</span>
+                  <span>{receipt.method === 'CASH' ? 'TUNAI:' : 'DIBAYAR:'}</span>
                   <span>Rp {receipt.paid.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-zinc-600">

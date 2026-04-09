@@ -183,9 +183,9 @@ export function SuppliersClient({ suppliers, products, supplierProducts }: { sup
       </div>
 
       {/* Two-Pane Layout */}
-      <div className="flex gap-5 h-[calc(100vh-13rem)]">
+      <div className="flex flex-col md:flex-row gap-5 md:h-[calc(100vh-13rem)]">
         {/* Left — Supplier List */}
-        <div className="w-64 shrink-0 flex flex-col gap-2 overflow-y-auto">
+        <div className="md:w-64 shrink-0 flex flex-col gap-2 overflow-y-auto">
           {suppliers.length === 0 && (
             <p className="text-sm text-zinc-400 px-1">Belum ada data vendor.</p>
           )}
@@ -242,7 +242,7 @@ export function SuppliersClient({ suppliers, products, supplierProducts }: { sup
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-zinc-50 hover:bg-transparent">

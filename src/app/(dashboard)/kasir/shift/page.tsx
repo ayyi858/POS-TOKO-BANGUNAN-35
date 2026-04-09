@@ -165,6 +165,38 @@ export default function ShiftPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Transaction History */}
+              {latestShift.transactions && latestShift.transactions.length > 0 && (
+                <div className="border-t border-zinc-100">
+                  <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-100 flex justify-between items-center">
+                    <p className="text-sm font-semibold text-zinc-900">Riwayat Transaksi</p>
+                    <span className="text-xs font-bold bg-zinc-200 text-zinc-700 px-2 py-0.5 rounded-full">
+                      {latestShift.transactions.length} Transaksi
+                    </span>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-4 space-y-2">
+                    {latestShift.transactions.map((trx: any) => (
+                      <div key={trx.id} className="flex justify-between items-center p-3 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-colors">
+                        <div>
+                          <p className="text-xs font-bold text-zinc-900">{trx.invoice_number}</p>
+                          <p className="text-[10px] text-zinc-500 mt-0.5">
+                            {new Date(trx.created_at).toLocaleTimeString('id-ID')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-600">
+                            Rp {Number(trx.total).toLocaleString('id-ID')}
+                          </p>
+                          <p className="text-[10px] text-zinc-500 mt-0.5">
+                            {trx.payment_method === 'CASH' ? 'Tunai' : trx.payment_method === 'TRANSFER' ? 'Transfer' : 'QRIS'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

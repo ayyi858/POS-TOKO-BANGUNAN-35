@@ -203,6 +203,7 @@ export function PurchaseOrdersClient({ pos, suppliers, products }: { pos: any[],
 
       {/* List */}
       <div className="bg-white rounded-xl border border-zinc-100 overflow-hidden">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-50 hover:bg-transparent">
@@ -266,6 +267,7 @@ export function PurchaseOrdersClient({ pos, suppliers, products }: { pos: any[],
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* PO Detail Modal */}

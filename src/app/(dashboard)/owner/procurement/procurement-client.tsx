@@ -114,8 +114,11 @@ export function ProcurementClient({ schedules, suppliers, products }: { schedule
     }
   }
 
-  const sortedSchedules = [...schedules].sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
-
+  const sortedSchedules = [...schedules].sort((a, b) => {
+    const timeA = new Date(`${a.scheduled_date.slice(0, 10)}T${a.reminder_time || '00:00'}:00+08:00`).getTime()
+    const timeB = new Date(`${b.scheduled_date.slice(0, 10)}T${b.reminder_time || '00:00'}:00+08:00`).getTime()
+    return timeA - timeB
+  })
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -144,11 +147,9 @@ export function ProcurementClient({ schedules, suppliers, products }: { schedule
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sortedSchedules.map(schedule => {
             const isDone = schedule.status === 'DONE'
-            const dt = new Date(schedule.scheduled_date)
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            const isOverdue = !isDone && dt < today
-
+            const dt = new Date(`${schedule.scheduled_date.slice(0, 10)}T${schedule.reminder_time || '00:00'}:00+08:00`)
+            const now = new Date()
+            const isOverdue = !isDone && dt < now
             return (
               <Card key={schedule.id} className={`border border-zinc-100 shadow-sm rounded-xl overflow-hidden transition-all ${isDone ? 'opacity-60 bg-zinc-50' : 'bg-white'}`}>
                 <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between gap-2">
@@ -160,7 +161,7 @@ export function ProcurementClient({ schedules, suppliers, products }: { schedule
                       </p>
                       {schedule.reminder_time && (
                         <p className="text-[10px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3" /> {schedule.reminder_time} WIB
+                          <Clock className="w-3 h-3" /> {schedule.reminder_time} WITA
                         </p>
                       )}
                     </div>

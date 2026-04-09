@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function createTransaction(userId: string, shiftId: string, items: {productId: string, qty: number, price: number}[]) {
+export async function createTransaction(userId: string, shiftId: string, items: {productId: string, qty: number, price: number}[], paymentMethod: string = 'CASH') {
   const supabase = await createClient()
   
   // 1. Hitung total
@@ -13,7 +13,8 @@ export async function createTransaction(userId: string, shiftId: string, items: 
   const { data: trx, error: trxError } = await supabase.from('transactions').insert([{
     user_id: userId,
     shift_id: shiftId,
-    total
+    total,
+    payment_method: paymentMethod
   }]).select().single()
   
   if (trxError) throw new Error("Gagal membuat transaksi: " + trxError.message)

@@ -175,3 +175,16 @@
     size: 80mm auto;
   }
 }
+
+/* PWA & mobile safe area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Ensure minimum column widths for scrollable tables */
+.table-min-w table {
+  min-width: 560px;
+}
