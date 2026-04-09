@@ -90,8 +90,7 @@ ALTER TABLE public.deposits ENABLE ROW LEVEL SECURITY;
 -- POLICIES
 
 -- Users
-CREATE POLICY "Users can view their own profile" ON public.users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Owner can view all profiles" ON public.users FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'OWNER'));
+CREATE POLICY "Enable read access for all users" ON public.users FOR SELECT USING (true);
 
 -- Products
 CREATE POLICY "All users can view products" ON public.products FOR SELECT USING (true);
@@ -128,3 +127,58 @@ INSERT INTO public.products (name, category, stock, price, min_stock) VALUES
 ('Cat Avian 1KG Putih', 'Cat', 30, 45000, 10),
 ('Pipa PVC 1 inch', 'Pipa', 50, 25000, 10),
 ('Kabel Eterna 2x1.5', 'Listrik', 10, 85000, 3);
+
+-- TABLE: suppliers
+CREATE TABLE public.suppliers (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  contact TEXT,
+  address TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- TABLE: supplier_products
+CREATE TABLE public.supplier_products (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  supplier_id UUID REFERENCES public.suppliers(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+  cost_price DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(supplier_id, product_id)
+);
+
+-- TABLE: stock_purchases
+CREATE TABLE public.stock_purchases (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+  supplier_id UUID REFERENCES public.suppliers(id),
+  qty INT NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL,
+  user_id UUID REFERENCES public.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ENABLE RLS
+ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.supplier_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_purchases ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES
+CREATE POLICY "Owner manage suppliers" ON public.suppliers FOR ALL USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'OWNER'));
+CREATE POLICY "Owner manage supplier_products" ON public.supplier_products FOR ALL USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'OWNER'));
+CREATE POLICY "Owner manage stock_purchases" ON public.stock_purchases FOR ALL USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'OWNER'));
+
+-- TRIGGER Update Stock automatically when stock_purchases is inserted
+CREATE OR REPLACE FUNCTION update_stock_after_purchase()
+RETURNS TRIGGER AS $$
+BEGIN
+   UPDATE public.products
+   SET stock = stock + NEW.qty
+   WHERE id = NEW.product_id;
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_stock_purchase
+AFTER INSERT ON public.stock_purchases
+FOR EACH ROW EXECUTE FUNCTION update_stock_after_purchase();
